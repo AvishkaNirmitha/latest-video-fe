@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PeerJS Video Call</title>
+  </head>
+  <body>
+    <h1>PeerJS Video Call</h1>
+    <video id="localVideo" autoplay muted></video>
+    <video id="remoteVideo" autoplay></video>
+    <input type="text" id="peerIdInput" placeholder="Enter peer ID to call" />
+    <button id="callButton">Call</button>
+    <script src="https://cdn.jsdelivr.net/npm/peerjs@1.3.2/dist/peerjs.min.js"></script>
+    <script>
+      const localVideo = document.getElementById("localVideo");
+      const remoteVideo = document.getElementById("remoteVideo");
+      const peerIdInput = document.getElementById("peerIdInput");
+      const callButton = document.getElementById("callButton");
+
+      // Initialize PeerJS with the server configuration
+      const peer = new Peer(undefined, {
+        host: "165.227.199.105",
+        port: 3000,
+        path: "/peerjs",
+        secure: false, // Set to true if your PeerJS server uses HTTPS
+      });
+
+      peer.on("open", (id) => {
+        console.log("My peer ID is: " + id);
+      });
+
+      let localStream;
+
+      // Get user media (video and audio)
+      navigator.mediaDevices
+        .getUserMedia({ video: true, audio: true })
+        .then((stream) => {
+          localVideo.srcObject = stream;
+          localStream = stream;
+        })
+        .catch((error) => {
+          console.error("Error accessing media devices.", error);
+        });
+
+      // Handle incoming calls
+      peer.on("call", (call) => {
+        call.answer(localStream); // Answer the call with our stream
+        call.on("stream", (remoteStream) => {
+          remoteVideo.srcObject = remoteStream; // Show the remote stream in the remote video element
+        });
+      });
+
+      // Make a call to the peer with the given ID
+      callButton.addEventListener("click", () => {
+        const peerId = peerIdInput.value;
+        const call = peer.call(peerId, localStream);
+        call.on("stream", (remoteStream) => {
+          remoteVideo.srcObject = remoteStream;
+        });
+      });
+    </script>
+  </body>
+</html>
